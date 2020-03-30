@@ -17,7 +17,7 @@
 
 ## Starter
 
-[Vertx](https://img.shields.io/badge/vert.x-3.8.5-purple.svg)
+[![Build Status](https://img.shields.io/badge/vert.x-3.8.5-purple.svg)](https://github.com/eclipse-vertx/vert.x)
 
 This application was generated using http://start.vertx.io
 
