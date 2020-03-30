@@ -17,7 +17,7 @@
 
 ## Starter
 
-image:https://img.shields.io/badge/vert.x-3.8.5-purple.svg[link="https://vertx.io"]
+[Vertx](https://img.shields.io/badge/vert.x-3.8.5-purple.svg)
 
 This application was generated using http://start.vertx.io
 
