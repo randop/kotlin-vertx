@@ -29,10 +29,10 @@ class MainVerticle : AbstractVerticle() {
 
           val connectOptions = MySQLConnectOptions()
               .setPort(3306)
-              .setHost("192.168.186.192")
-              .setDatabase("gateway")
-              .setUser("root")
-              .setPassword("mysql")
+              .setHost("host")
+              .setDatabase("database")
+              .setUser("user")
+              .setPassword("password")
               .setCharset("utf8mb4")
               .setCollation("utf8mb4_unicode_ci")
 
