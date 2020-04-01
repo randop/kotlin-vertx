@@ -12,7 +12,8 @@ import io.vertx.sqlclient.PoolOptions
 class MainVerticle : AbstractVerticle() {
 
   override fun start(startPromise: Promise<Void>) {
-
+    val router = Router.router(vertx)
+    setupRoutes(router)
 
     vertx
       .createHttpServer()
@@ -54,4 +55,16 @@ class MainVerticle : AbstractVerticle() {
         }
       }
   }
+
+  private fun setupRoutes(router: Router) {
+    router.route("/").handler(indexRouteHandler())    
+  }
+
+  private fun indexRouteHandler() = { ctx: RoutingContext ->     
+    with(ctx.response()) {
+      putHeader("content-type", "text/plain")
+      end("Hello World!")
+    }    
+  }
+  
 }
