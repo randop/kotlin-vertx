@@ -1,10 +1,10 @@
 plugins {
-  id 'org.jetbrains.kotlin.jvm' version '1.3.20'
+  id 'org.jetbrains.kotlin.jvm' version '1.3.70'
   id 'application'
   id 'com.github.johnrengelman.shadow' version '5.0.0'
 }
 
-group = 'com.example'
+group = 'com.randolphledesma'
 version = '1.0.0-SNAPSHOT'
 
 repositories {
@@ -13,8 +13,8 @@ repositories {
 }
 
 ext {
-  kotlinVersion = '1.3.20'
-  vertxVersion = '3.8.5'
+  kotlinVersion = '1.3.70'
+  vertxVersion = '3.9.0'
   junitJupiterEngineVersion = '5.4.0'
 }
 
@@ -23,14 +23,14 @@ application {
 }
 
 
-def mainVerticleName = 'com.example.starter.MainVerticle'
+def mainVerticleName = 'com.randolphledesma.gad.MainVerticle'
 def watchForChange = 'src/**/*'
 def doOnChange = './gradlew classes'
 
 dependencies {
   implementation "io.vertx:vertx-web-client:$vertxVersion"
   implementation "io.vertx:vertx-web:$vertxVersion"
-  implementation "io.vertx:vertx-mysql-client:$vertxVersion"
+  implementation "io.vertx:vertx-lang-kotlin-coroutines:$vertxVersion"
   implementation "io.vertx:vertx-lang-kotlin:$vertxVersion"
 
   testImplementation "io.vertx:vertx-junit5:$vertxVersion"
@@ -65,5 +65,5 @@ test {
 }
 
 run {
-  args = ['run', mainVerticleName, "--redeploy=$watchForChange", "--launcher-class=$mainClassName", "--on-redeploy=$doOnChange"]
+  args = ['run', mainVerticleName]
 }

@@ -1,4 +1,4 @@
-package com.example.starter
+package com.randolphledesma.gad
 
 import io.vertx.core.Vertx
 import io.vertx.junit5.VertxExtension
