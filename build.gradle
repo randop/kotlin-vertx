@@ -4,6 +4,8 @@ plugins {
   id 'com.github.johnrengelman.shadow' version '5.0.0'
 }
 
+apply plugin: 'jacoco'
+
 group = 'com.randolphledesma'
 version = '1.0.0-SNAPSHOT'
 
@@ -63,6 +65,16 @@ test {
     events 'PASSED', 'FAILED', 'SKIPPED'
   }
 }
+
+// Based on the guide here: https://github.com/codecov/example-gradle
+jacocoTestReport {
+    reports {
+        xml.enabled true
+        html.enabled true
+    }
+}
+
+check.dependsOn jacocoTestReport
 
 run {
   args = ['run', mainVerticleName]
