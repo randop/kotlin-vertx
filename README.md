@@ -1,5 +1,20 @@
 <h1 align="center">Kotlin Vert.x Starter Project</h1>
 
+<p align="center">    
+    <a href="https://travis-ci.org/randop/kotlin-vertx">
+        <img src="https://circleci.com/gh/randop/kotlin-vertx.svg?style=svg" alt="Circle-CI Build Status">
+    </a>
+    <a href="https://github.com/randop/kotlin-vertx">
+        <img src="https://img.shields.io/badge/Kotlin-1.3-blue" alt="Kotlin" />
+    <a>
+    <a href="https://github.com/randop/kotlin-vertx">
+        <img src="https://img.shields.io/badge/Vert.x-3.9-green" alt="Vert.x" />
+    <a>
+    <a href="https://github.com/randop/GeoApi/blob/master/LICENSE">
+        <img src="https://img.shields.io/github/license/mashape/apistatus.svg" alt="MIT License" >
+    </a>
+</p>
+
 > Generated using starter project at https://start.vertx.io/
 >
 > Dependencies: Vert.x Web, Vert.x Web Client, Reactive MySQL client
