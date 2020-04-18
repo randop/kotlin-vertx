@@ -2,6 +2,7 @@ plugins {
   id 'org.jetbrains.kotlin.jvm' version '1.3.70'
   id 'application'
   id 'com.github.johnrengelman.shadow' version '5.0.0'
+  id "com.gradle.enterprise" version "3.2.1"
 }
 
 apply plugin: 'jacoco'
@@ -64,6 +65,13 @@ test {
   testLogging {
     events 'PASSED', 'FAILED', 'SKIPPED'
   }
+}
+
+gradleEnterprise {
+    buildScan {
+        termsOfServiceUrl = 'https://gradle.com/terms-of-service'
+        termsOfServiceAgree = 'yes'
+    }
 }
 
 // Based on the guide here: https://github.com/codecov/example-gradle
