@@ -1,8 +1,11 @@
 <h1 align="center">Kotlin Vert.x Starter Project</h1>
 
 <p align="center">    
-    <a href="https://travis-ci.org/randop/kotlin-vertx">
+    <a href="https://circleci.com/gh/randop/kotlin-vertx">
         <img src="https://circleci.com/gh/randop/kotlin-vertx.svg?style=svg" alt="Circle-CI Build Status">
+    </a>
+    <a href="https://travis-ci.org/github/randop/kotlin-vertx">
+        <img src="https://api.travis-ci.org/randop/kotlin-vertx.svg?branch=master" alt="Travis-CI build status" />
     </a>
     <a href="https://github.com/randop/kotlin-vertx">
         <img src="https://img.shields.io/badge/Kotlin-1.3-blue" alt="Kotlin" />
