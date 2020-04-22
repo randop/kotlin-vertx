@@ -107,7 +107,7 @@ object HttpVerticleModule {
     @Singleton
     @IntoMap
     @StringKey("com.randolphledesma.gad.HttpVerticle")
-    fun provideHttpVerticle(): Verticle = HttpVerticle()
+    fun provideHttpVerticle(vertx: Vertx): Verticle = HttpVerticle()
 }
 
 @Module
@@ -116,10 +116,15 @@ object VertxModule {
     @Provides    
     @Singleton
     fun provideVertx(verticleFactory: VerticleFactory): Vertx {        
-        val vertx = Vertx.vertx()
-        println("provideVertx: ${vertx}")
+        val vertx = Vertx.vertx()        
         vertx.registerVerticleFactory(verticleFactory)
         return vertx
+    }
+
+    @Provides
+    @Singleton
+    fun provideRouter(vertx: Vertx): Router {
+        return Router.router(vertx)
     }
 }
 
@@ -158,7 +163,8 @@ object MysqlModule {
                 if (ar.succeeded()) {                    
                     LOG.info("Database Connection Succeeded: ${ar.result().first().getTemporal(0)}")
                 } else {                                        
-                    throw RuntimeException(ar.cause().message)
+                    LOG.error(ar.cause().message)
+                    System.exit(-1)                    
                 }
             })
             return client
