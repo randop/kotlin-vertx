@@ -155,7 +155,7 @@ object SqlModule {
     @Singleton
     fun provideJdbcClient(vertx: Vertx): JDBCClient {
         lateinit var client: JDBCClient
-        val sql = "SELECT CURRENT_TIMESTAMP(), @@character_set_database, @@collation_database"        
+        val sql = "SELECT CURRENT_TIMESTAMP() AS ts, @@character_set_database AS db_charset, @@collation_database AS db_collation, @@global.time_zone AS tz_global, @@session.time_zone AS tz_session"
         runBlocking(vertx.dispatcher()) {
             try {
                 var config = json {
@@ -171,9 +171,10 @@ object SqlModule {
                 withTimeout<Unit>(30000) {
                     val connection = client.getConnectionAwait()
                     val res = connection.queryAwait(sql)
-                    val jsonResult = res.rows.get(0).toString().parseJson().await()
-                    val ts = jsonResult!!.getString("CURRENT_TIMESTAMP()")
-                    LOG.info("${res.rows.get(0)}")
+                    val jsonVal = res.rows.get(0).toString()
+                    val jsonResult = jsonVal.parseJson().await()
+                    val ts = jsonResult!!.getString("ts")
+                    LOG.info("$jsonVal")
                     LOG.info("Database Startup Connection Succeeded: $ts")
                     connection.close()
                 }                
