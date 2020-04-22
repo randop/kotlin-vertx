@@ -3,6 +3,7 @@ package com.randolphledesma.gad
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Future
 import io.vertx.ext.web.Router
+import io.vertx.config.ConfigRetriever
 
 import javax.inject.Inject
 
@@ -10,6 +11,16 @@ class HttpVerticle @Inject constructor(val mainController: MainController): Abst
   private val LOG by logger()
 
   override fun start(startFuture: Future<Void>) {   
+    val retriever = ConfigRetriever.create(vertx)
+    retriever.getConfig({ ar ->
+      if (ar.failed()) {
+        LOG.error("failed")
+      } else {
+        var config = ar.result()        
+      }
+    })
+
+
     val router = mainController.create()
     vertx
       .createHttpServer()
