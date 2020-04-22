@@ -3,12 +3,9 @@ package com.randolphledesma.gad
 import javax.inject.Inject
 
 fun main(args: Array<String>) {
-    DaggerApplicationComponent.builder()
-            .fruitStoreModule(FruitStoreModule)
+    DaggerApplicationComponent.builder()            
             .vertxModule(VertxModule)
-            .daggerVerticleFactoryModule(DaggerVerticleFactoryModule)
-            .fruitVerticleModule(FruitVerticleModule)
-            .storePrintVerticleModule(StorePrintVerticleModule)
+            .daggerVerticleFactoryModule(DaggerVerticleFactoryModule)            
             .mysqlModule(MysqlModule)
             .httpVerticleModule(HttpVerticleModule)
             .vertxWebClientModule(VertxWebClientModule)
