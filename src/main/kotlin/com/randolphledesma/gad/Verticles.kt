@@ -2,19 +2,18 @@ package com.randolphledesma.gad
 
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Future
+import io.vertx.ext.web.Router
+
 import javax.inject.Inject
 
-class HttpVerticle: AbstractVerticle() {
+class HttpVerticle @Inject constructor(val mainController: MainController): AbstractVerticle() {
   private val LOG by logger()
 
-  override fun start(startFuture: Future<Void>) {    
+  override fun start(startFuture: Future<Void>) {   
+    val router = mainController.create()
     vertx
       .createHttpServer()
-      .requestHandler { req ->
-        req.response()
-          .putHeader("content-type", "text/plain")
-          .end("Hello World")
-      }
+      .requestHandler { router.accept(it) }
       .listen(8080) { http ->
         if (http.succeeded()) {
           startFuture.complete()
@@ -25,3 +24,40 @@ class HttpVerticle: AbstractVerticle() {
       }
   }
 }
+
+abstract class Controller(val handlers: Router.() -> Unit) {
+    abstract val router: Router
+    fun create(): Router {
+        return router.apply {
+            handlers()
+        }
+    }
+}
+
+class MainController @Inject constructor(override val router: Router) : Controller({
+    val LOG by logger()    
+    route().last().handler { context ->
+      with(context.response()) {
+        statusCode = HttpStatus.NotFound.code
+        end()
+      }
+    }
+
+    get("/").handler { context ->
+      with(context.response()) {
+        statusCode = HttpStatus.OK.code
+        end("Hello!!!")
+      }
+    }
+
+    route().last().failureHandler { errorContext ->      
+      val e: Throwable? = errorContext.failure()
+      if (e != null) {
+          LOG.error(e.message, e)
+      }        
+      with(errorContext.response()) {
+        statusCode = HttpStatus.InternalServerError.code
+        end()
+      }
+    }
+})

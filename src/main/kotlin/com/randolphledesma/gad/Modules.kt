@@ -50,7 +50,7 @@ class Application @Inject constructor(private val vertx: Vertx, private val dbCl
             try {
                 startHttpVerticle()
             } catch(error: Throwable) {                
-                LOG.error("HttpServer Component Failed")
+                LOG.error("HttpServer Component Failed", error)
                 System.exit(-1)
             }
         }
@@ -107,7 +107,7 @@ object HttpVerticleModule {
     @Singleton
     @IntoMap
     @StringKey("com.randolphledesma.gad.HttpVerticle")
-    fun provideHttpVerticle(vertx: Vertx): Verticle = HttpVerticle()
+    fun provideHttpVerticle(router: Router): Verticle = HttpVerticle(MainController(router))
 }
 
 @Module
