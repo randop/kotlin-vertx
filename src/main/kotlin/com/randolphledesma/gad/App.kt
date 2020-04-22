@@ -6,7 +6,7 @@ fun main(args: Array<String>) {
     DaggerApplicationComponent.builder()                        
             .vertxModule(VertxModule)            
             .daggerVerticleFactoryModule(DaggerVerticleFactoryModule)
-            .mysqlModule(MysqlModule)
+            .sqlModule(SqlModule)
             .httpVerticleModule(HttpVerticleModule)
             .vertxWebClientModule(VertxWebClientModule)
             .build()

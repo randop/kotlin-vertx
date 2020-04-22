@@ -47,14 +47,14 @@ abstract class Controller(val handlers: Router.() -> Unit) {
 
 class MainController @Inject constructor(override val router: Router) : Controller({
     val LOG by logger()    
-    route().last().handler { context ->
+    route().last().handler { context ->      
       with(context.response()) {
         statusCode = HttpStatus.NotFound.code
         end()
       }
     }
 
-    get("/").handler { context ->
+    get("/").handler { context ->      
       with(context.response()) {
         statusCode = HttpStatus.OK.code
         end("Hello!!!")
@@ -62,7 +62,7 @@ class MainController @Inject constructor(override val router: Router) : Controll
     }
 
     route().last().failureHandler { errorContext ->      
-      val e: Throwable? = errorContext.failure()
+      val e: Throwable? = errorContext.failure()      
       if (e != null) {
           LOG.error(e.message, e)
       }        
