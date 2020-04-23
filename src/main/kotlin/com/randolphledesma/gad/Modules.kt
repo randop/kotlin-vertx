@@ -154,7 +154,7 @@ object VertxWebClientModule {
     @Provides    
     @Singleton
     fun provideVertxWebClient(vertx: Vertx): WebClient {        
-        val options = WebClientOptions().setTcpKeepAlive(true).setUserAgent("Tindango/1.0")
+        val options = WebClientOptions().setTcpKeepAlive(true).setUserAgent("Gad/1.0")
         val client = WebClient.create(vertx, options)
         return client
     }
