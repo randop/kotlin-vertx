@@ -12,13 +12,14 @@ class HttpVerticle @Inject constructor(private val mainController: MainControlle
 
   override fun start(startFuture: Future<Void>) {   
     val router = mainController.create()
+    val port = mainController.applicationContext.configuration.getInteger(ConfigurationKeyList.APP_PORT.name, 8080)
     vertx
       .createHttpServer()
       .requestHandler { router.accept(it) }
-      .listen(8080) { http ->
+      .listen(port) { http ->
         if (http.succeeded()) {
           startFuture.complete()
-          LOG.info("HTTP server started on port 8080")
+          LOG.info("HTTP server started on port $port")
         } else {
           startFuture.fail(http.cause());
         }

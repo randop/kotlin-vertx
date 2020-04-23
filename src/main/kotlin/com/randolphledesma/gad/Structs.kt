@@ -68,3 +68,7 @@ enum class HttpStatus(val code: Int) {
 
   Unknown(0)
 }
+
+enum class ConfigurationKeyList {
+  APP_PORT, APP_HOST, APP_GREETING
+}

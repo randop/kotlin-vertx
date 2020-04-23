@@ -74,6 +74,7 @@ interface ApplicationComponent {
 class ApplicationContext @Inject constructor(val vertx: Vertx, val dbClient: JDBCClient, val router: Router) {
     private val LOG by logger()
     var configuration = JsonObject()
+
     init {
         runBlocking {
             try {
@@ -169,7 +170,7 @@ object SqlModule {
     fun provideJdbcClient(vertx: Vertx): JDBCClient {
         lateinit var client: JDBCClient
         val sql = "SELECT CURRENT_TIMESTAMP() AS ts, @@character_set_database AS db_charset, @@collation_database AS db_collation, @@global.time_zone AS tz_global, @@session.time_zone AS tz_session"
-        runBlocking(vertx.dispatcher()) {
+        runBlocking {
             try {
                 var config = json {
                     obj(

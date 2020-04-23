@@ -31,14 +31,7 @@ class MainController @Inject constructor(override val applicationContext: Applic
     get("/").handler { context ->
         with(context.response()) {
             statusCode = HttpStatus.OK.code
-            end("Hello!!!")
-        }
-    }
-
-    get("/rfl").handler { context ->
-        with(context.response()) {
-            statusCode = HttpStatus.OK.code
-            end( applicationContext.configuration.encode() )
+            end( applicationContext.configuration.getString(ConfigurationKeyList.APP_GREETING.name) )
         }
     }
 
