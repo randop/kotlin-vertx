@@ -11,16 +11,6 @@ class HttpVerticle @Inject constructor(private val mainController: MainControlle
   private val LOG by logger()
 
   override fun start(startFuture: Future<Void>) {   
-    val retriever = ConfigRetriever.create(vertx)
-    retriever.getConfig { ar ->
-      if (ar.failed()) {
-        LOG.error("failed")
-      } else {
-        var config = ar.result()
-      }
-    }
-
-
     val router = mainController.create()
     vertx
       .createHttpServer()

@@ -5,6 +5,7 @@ import dagger.Provides
 import dagger.Component
 import dagger.multibindings.IntoMap
 import dagger.multibindings.StringKey
+import io.vertx.config.ConfigRetriever
 
 import kotlinx.coroutines.*
 import io.vertx.kotlin.coroutines.*
@@ -16,6 +17,7 @@ import javax.inject.Provider
 import io.vertx.core.Verticle
 import io.vertx.core.spi.VerticleFactory
 import io.vertx.core.Vertx
+import io.vertx.core.json.JsonObject
 import io.vertx.kotlin.coroutines.awaitResult
 import io.vertx.kotlin.coroutines.dispatcher
 import io.vertx.ext.web.Router
@@ -32,11 +34,11 @@ import io.vertx.kotlin.core.json.obj
 /**
  * The application itself.
  */
-class Application @Inject constructor(private val vertx: Vertx, private val dbClient: JDBCClient) {
+class Application @Inject constructor(private val applicationContext: ApplicationContext) {
     private val LOG by logger()
 
-    fun start() {        
-        runBlocking(vertx.dispatcher()) {
+    fun start() {
+        runBlocking(applicationContext.vertx.dispatcher()) {
             try {
                 startHttpVerticle()
             } catch(error: Throwable) {                
@@ -47,7 +49,7 @@ class Application @Inject constructor(private val vertx: Vertx, private val dbCl
     }
 
     private suspend fun startHttpVerticle() {
-        awaitResult<String> { vertx.deployVerticle("dagger:${HttpVerticle::class.java.name}", it) }
+        awaitResult<String> { applicationContext.vertx.deployVerticle("dagger:${HttpVerticle::class.java.name}", it) }
         LOG.info("Main verticle deployed successful")
     }
 }
@@ -57,14 +59,34 @@ class Application @Inject constructor(private val vertx: Vertx, private val dbCl
  */
 @Singleton
 @Component(modules = [
-        VertxModule::class, 
-        DaggerVerticleFactoryModule::class, 
-        HttpVerticleModule::class,
+        DaggerVerticleFactoryModule::class,
+        VertxModule::class,
         VertxWebClientModule::class,
-        SqlModule::class
+        SqlModule::class,
+        ApplicationContextModule::class,
+        HttpVerticleModule::class
     ])
 interface ApplicationComponent {
     fun application(): Application
+}
+
+@Singleton
+class ApplicationContext @Inject constructor(val vertx: Vertx, val dbClient: JDBCClient, val router: Router) {
+    private val LOG by logger()
+    var configuration = JsonObject()
+    init {
+        runBlocking {
+            try {
+                val retriever = ConfigRetriever.create(vertx)
+                configuration = awaitResult<JsonObject> { handler ->
+                    retriever.getConfig(handler)
+                }
+                LOG.info("Application Configuration Loaded")
+            } catch (error: Throwable) {
+                LOG.error("Application Configuration Retrieval Failed", error)
+            }
+        }
+    }
 }
 
 class DaggerVerticleFactory(private val verticleMap: Map<String, Provider<Verticle>>) : VerticleFactory {
@@ -83,6 +105,15 @@ class DaggerVerticleFactory(private val verticleMap: Map<String, Provider<Vertic
 }
 
 @Module
+object ApplicationContextModule {
+    @Provides
+    @Singleton
+    @IntoMap
+    @StringKey("com.randolphledesma.gad.ApplicationContext")
+    fun provideApplicationContext(vertx: Vertx, dbClient: JDBCClient, router: Router) = ApplicationContext(vertx, dbClient, router)
+}
+
+@Module
 object DaggerVerticleFactoryModule {
     @JvmSuppressWildcards
     @Provides
@@ -96,7 +127,7 @@ object HttpVerticleModule {
     @Singleton
     @IntoMap
     @StringKey("com.randolphledesma.gad.HttpVerticle")
-    fun provideHttpVerticle(vertx: Vertx, dbClient: JDBCClient, router: Router): Verticle = HttpVerticle(MainController(vertx, dbClient, router))
+    fun provideHttpVerticle(context: ApplicationContext): Verticle = HttpVerticle(MainController(context))
 }
 
 @Module
@@ -125,7 +156,6 @@ object VertxWebClientModule {
     fun provideVertxWebClient(vertx: Vertx): WebClient {        
         val options = WebClientOptions().setTcpKeepAlive(true).setUserAgent("Tindango/1.0")
         val client = WebClient.create(vertx, options)
-        println("provideVertxWebClient: ${client}")
         return client
     }
 }

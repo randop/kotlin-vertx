@@ -3,22 +3,24 @@ package com.randolphledesma.gad
 import io.vertx.core.Vertx
 import io.vertx.ext.jdbc.JDBCClient
 import io.vertx.ext.web.Router
+import io.vertx.kotlin.coroutines.dispatcher
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 abstract class Controller(val handlers: Router.() -> Unit) {
-    abstract val vertx: Vertx
-    abstract val dbClient: JDBCClient
-    abstract val router: Router
+    abstract val applicationContext: ApplicationContext
 
     fun create(): Router {
-        return router.apply {
+        return applicationContext.router.apply {
             handlers()
         }
     }
 }
 
-class MainController @Inject constructor(override val vertx: Vertx, override val dbClient: JDBCClient, override val router: Router) : Controller({
+class MainController @Inject constructor(override val applicationContext: ApplicationContext) : Controller({
     val LOG by logger()
+
     route().last().handler { context ->
         with(context.response()) {
             statusCode = HttpStatus.NotFound.code
@@ -30,6 +32,13 @@ class MainController @Inject constructor(override val vertx: Vertx, override val
         with(context.response()) {
             statusCode = HttpStatus.OK.code
             end("Hello!!!")
+        }
+    }
+
+    get("/rfl").handler { context ->
+        with(context.response()) {
+            statusCode = HttpStatus.OK.code
+            end( applicationContext.configuration.encode() )
         }
     }
 
