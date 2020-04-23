@@ -20,7 +20,6 @@ import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
 import io.vertx.kotlin.coroutines.awaitResult
 import io.vertx.kotlin.coroutines.dispatcher
-import io.vertx.ext.web.Router
 import io.vertx.ext.web.client.WebClient
 import io.vertx.ext.web.client.WebClientOptions
 
@@ -71,7 +70,7 @@ interface ApplicationComponent {
 }
 
 @Singleton
-class ApplicationContext @Inject constructor(val vertx: Vertx, val dbClient: JDBCClient, val router: Router) {
+class ApplicationContext @Inject constructor(val vertx: Vertx, val dbClient: JDBCClient) {
     private val LOG by logger()
     var configuration = JsonObject()
 
@@ -111,7 +110,7 @@ object ApplicationContextModule {
     @Singleton
     @IntoMap
     @StringKey("com.randolphledesma.gad.ApplicationContext")
-    fun provideApplicationContext(vertx: Vertx, dbClient: JDBCClient, router: Router) = ApplicationContext(vertx, dbClient, router)
+    fun provideApplicationContext(vertx: Vertx, dbClient: JDBCClient) = ApplicationContext(vertx, dbClient)
 }
 
 @Module
@@ -141,12 +140,6 @@ object VertxModule {
         vertx.registerVerticleFactory(verticleFactory)
         return vertx
     }
-
-    @Provides
-    @Singleton
-    fun provideRouter(vertx: Vertx): Router {
-        return Router.router(vertx)
-    }
 }
 
 @Module
@@ -171,14 +164,32 @@ object SqlModule {
         lateinit var client: JDBCClient
         val sql = "SELECT CURRENT_TIMESTAMP() AS ts, @@character_set_database AS db_charset, @@collation_database AS db_collation, @@global.time_zone AS tz_global, @@session.time_zone AS tz_session"
         runBlocking {
+            var jsonConfig = JsonObject()
+            try {
+                val retriever = ConfigRetriever.create(vertx)
+                jsonConfig = awaitResult<JsonObject> { handler ->
+                    retriever.getConfig(handler)
+                }
+            } catch (error: Throwable) {
+                //void
+            }
+
+            val host = jsonConfig.getString(ConfigurationKeyList.DB_HOST.name, "127.0.0.1")
+            val port = jsonConfig.getInteger(ConfigurationKeyList.DB_PORT.name, 3306)
+            val user = jsonConfig.getString(ConfigurationKeyList.DB_USER.name, "DEFAULT_USER")
+            val password = jsonConfig.getString(ConfigurationKeyList.DB_PASSWORD.name, "DEFAULT_PASSWORD")
+            val poolSize = jsonConfig.getInteger(ConfigurationKeyList.DB_POOL_SIZE.name, 15)
+            val db = jsonConfig.getString(ConfigurationKeyList.DB_DATABASE.name, "DEFAULT_DB")
+            val extra = jsonConfig.getString(ConfigurationKeyList.DB_EXTRA_PARAMETERS.name, "")
+
             try {
                 var config = json {
                     obj(
-                        "url" to "jdbc:mysql://192.168.0.197:3306/gateway?useUnicode=true&character_set_server=utf8mb4&collation_database=utf8mb4_unicode_ci",
+                        "url" to "jdbc:mysql://$host:$port/$db?$extra",
                         "driver_class" to "com.mysql.cj.jdbc.Driver",
-                        "max_pool_size" to 30,
-                        "user" to "gateway",
-                        "password" to "password"                                            
+                        "max_pool_size" to poolSize,
+                        "user" to user,
+                        "password" to password
                     )
                 }
                 client = JDBCClient.createShared(vertx, config)

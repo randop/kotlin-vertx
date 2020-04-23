@@ -70,5 +70,5 @@ enum class HttpStatus(val code: Int) {
 }
 
 enum class ConfigurationKeyList {
-  APP_PORT, APP_HOST, APP_GREETING
+  APP_PORT, APP_HOST, APP_GREETING, DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE, DB_POOL_SIZE, DB_EXTRA_PARAMETERS
 }

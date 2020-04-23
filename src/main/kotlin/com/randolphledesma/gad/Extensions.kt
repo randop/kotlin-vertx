@@ -16,6 +16,13 @@ import io.vertx.core.json.JsonObject
 import io.vertx.core.parsetools.JsonParser
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.Promise
+import io.vertx.core.http.HttpServerResponse
+import io.vertx.core.json.Json
+import io.vertx.ext.web.Route
+import io.vertx.ext.web.RoutingContext
+import io.vertx.kotlin.coroutines.dispatcher
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 fun <T : Any> T.logger(): Lazy<Logger> {
     return lazy { LoggerFactory.getLogger(
@@ -67,4 +74,26 @@ fun LocalDateTime.toMilliSeconds(): Long {
 @Throws(DateTimeParseException::class)
 fun String.toLocalDate(pattern: String): LocalDate {
     return LocalDate.parse(this, DateTimeFormatter.ofPattern(pattern))
+}
+
+/**
+ * An extension method for simplifying coroutines usage with Vert.x Web routers
+ */
+fun Route.coroutineHandler(fn: suspend (RoutingContext) -> Unit) {
+    handler { ctx ->
+        GlobalScope.launch(ctx.vertx().dispatcher()) {
+            try {
+                fn(ctx)
+            } catch (e: Exception) {
+                ctx.fail(e)
+            }
+        }
+    }
+}
+
+/**
+ * Extension to the HTTP response to output JSON objects.
+ */
+fun HttpServerResponse.endWithJson(obj: Any) {
+    this.putHeader("Content-Type", "application/json; charset=utf-8").end(Json.encode(obj))
 }

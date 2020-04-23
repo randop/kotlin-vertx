@@ -1,5 +1,12 @@
 {    
     "APP_PORT": 8080,
     "APP_HOST": "0.0.0.0",
-    "APP_GREETING": "{Hello}"
+    "APP_GREETING": "{Hello}",
+    "DB_HOST": "192.168.0.197",
+    "DB_PORT": 3306,
+    "DB_USER": "gateway",
+    "DB_PASSWORD": "password",
+    "DB_DATABASE": "gateway",
+    "DB_POOL_SIZE": 30,
+    "DB_EXTRA_PARAMETERS": "useUnicode=true&character_set_server=utf8mb4&collation_database=utf8mb4_unicode_ci"
 }
