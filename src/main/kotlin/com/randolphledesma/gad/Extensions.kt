@@ -9,10 +9,6 @@ import io.vertx.core.parsetools.JsonParser
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.Promise
 
-import io.vertx.ext.jdbc.JDBCClient
-import io.vertx.ext.sql.SQLConnection
-import io.vertx.ext.sql.ResultSet
-
 fun <T : Any> T.logger(): Lazy<Logger> {
     return lazy { LoggerFactory.getLogger(
         System.getProperty("vertx.logger-delegate-factory-class-name")?: "java.util.logging.LogManager"
@@ -25,12 +21,12 @@ inline suspend fun <T: String> T.parseJson(): Future<JsonObject?> {
     val buffer = Buffer.buffer()
     buffer.appendString(this)
     parser.objectValueMode()
-    parser.handler({ event ->
+    parser.handler { event ->
         promise.complete(event.objectValue())
-    })
-    parser.exceptionHandler({ er -> 
+    }
+    parser.exceptionHandler { er ->
         promise.fail(er.cause)
-    })
+    }
     parser.write(buffer)
     parser.end()
     return promise.future()

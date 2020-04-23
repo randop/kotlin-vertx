@@ -15,35 +15,19 @@ import javax.inject.Provider
 
 import io.vertx.core.Verticle
 import io.vertx.core.spi.VerticleFactory
-import io.vertx.core.DeploymentOptions
 import io.vertx.core.Vertx
 import io.vertx.kotlin.coroutines.awaitResult
 import io.vertx.kotlin.coroutines.dispatcher
-import io.vertx.core.eventbus.Message
-import io.vertx.kotlin.coroutines.CoroutineVerticle
-import io.vertx.core.AbstractVerticle
-import io.vertx.core.Promise
-import io.vertx.core.Future
 import io.vertx.ext.web.Router
-import io.vertx.ext.web.RoutingContext
-import io.vertx.core.logging.LoggerFactory
 import io.vertx.ext.web.client.WebClient
 import io.vertx.ext.web.client.WebClientOptions
-import io.vertx.ext.web.client.predicate.ResponsePredicate
 
 import io.vertx.ext.jdbc.JDBCClient
-import io.vertx.ext.sql.SQLConnection
-import io.vertx.kotlin.ext.sql.executeAwait
 import io.vertx.kotlin.ext.sql.queryAwait
 import io.vertx.kotlin.ext.sql.getConnectionAwait
 
-import io.vertx.kotlin.core.json.array
-import io.vertx.kotlin.core.json.get
 import io.vertx.kotlin.core.json.json
 import io.vertx.kotlin.core.json.obj
-
-import java.util.*
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * The application itself.
@@ -80,8 +64,7 @@ class Application @Inject constructor(private val vertx: Vertx, private val dbCl
         SqlModule::class
     ])
 interface ApplicationComponent {
-    fun application(): Application    
-    fun database(): JDBCClient
+    fun application(): Application
 }
 
 class DaggerVerticleFactory(private val verticleMap: Map<String, Provider<Verticle>>) : VerticleFactory {
@@ -113,7 +96,7 @@ object HttpVerticleModule {
     @Singleton
     @IntoMap
     @StringKey("com.randolphledesma.gad.HttpVerticle")
-    fun provideHttpVerticle(router: Router): Verticle = HttpVerticle(MainController(router))
+    fun provideHttpVerticle(vertx: Vertx, dbClient: JDBCClient, router: Router): Verticle = HttpVerticle(MainController(vertx, dbClient, router))
 }
 
 @Module
