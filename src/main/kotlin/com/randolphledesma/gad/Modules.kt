@@ -30,6 +30,7 @@ import io.vertx.kotlin.ext.sql.getConnectionAwait
 import io.vertx.kotlin.core.json.json
 import io.vertx.kotlin.core.json.obj
 import redis.clients.jedis.Jedis
+import java.util.*
 
 /**
  * The application itself.
@@ -151,18 +152,43 @@ object VertxWebClientModule {
     @Singleton
     fun provideVertxWebClient(vertx: Vertx): WebClient {        
         val options = WebClientOptions().setTcpKeepAlive(true).setUserAgent("Gad/1.0")
-        val client = WebClient.create(vertx, options)
-        return client
+        return WebClient.create(vertx, options)
     }
 }
 
 @Module
 object RedisModule {
+    private val LOG by logger()
 
     @Provides
     @Singleton
-    fun provideRedisClient(): Jedis {
-        return Jedis("localhost")
+    fun provideRedisClient(vertx: Vertx): Jedis {
+        lateinit var client: Jedis
+        runBlocking {
+            var jsonConfig = JsonObject()
+            try {
+                val retriever = ConfigRetriever.create(vertx)
+                jsonConfig = awaitResult { handler ->
+                    retriever.getConfig(handler)
+                }
+            } catch (error: Throwable) {
+                //void
+            }
+
+            val host = jsonConfig.getString(ConfigurationKeyList.REDIS_HOST.name, "127.0.0.1")
+            val port = jsonConfig.getInteger(ConfigurationKeyList.REDIS_PORT.name, 6379)
+            val timeout = jsonConfig.getInteger(ConfigurationKeyList.REDIS_CONNECT_TIMEOUT.name, 60)
+
+            try {
+                client = Jedis(host, port, timeout)
+                client.connect()
+                println("Redis Connected: ${client.isConnected}")
+            } catch (error: Throwable) {
+                LOG.error(error.message, error)
+                System.exit(-1)
+            }
+        }
+        return client
     }
 }
 
@@ -193,6 +219,7 @@ object SqlModule {
             val poolSize = jsonConfig.getInteger(ConfigurationKeyList.DB_POOL_SIZE.name, 15)
             val db = jsonConfig.getString(ConfigurationKeyList.DB_DATABASE.name, "DEFAULT_DB")
             val extra = jsonConfig.getString(ConfigurationKeyList.DB_EXTRA_PARAMETERS.name, "")
+            val timeout = jsonConfig.getLong(ConfigurationKeyList.DB_CONNECT_TIMEOUT.name, 30000L)
 
             try {
                 var config = json {
@@ -205,12 +232,12 @@ object SqlModule {
                     )
                 }
                 client = JDBCClient.createShared(vertx, config)
-                withTimeout<Unit>(30000) {
+                withTimeout<Unit>(timeout) {
                     val connection = client.getConnectionAwait()
                     val res = connection.queryAwait(sql)
-                    val jsonVal = res.rows.get(0).toString()
+                    val jsonVal = res.rows[0].toString()
                     val jsonResult = jsonVal.parseJson().await()
-                    val ts = jsonResult!!.getString("ts")
+                    val ts = jsonResult.getString("ts")
                     LOG.info("$jsonVal")
                     LOG.info("Database Startup Connection Succeeded: $ts")
                     connection.close()

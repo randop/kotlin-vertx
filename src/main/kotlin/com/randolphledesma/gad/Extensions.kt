@@ -30,8 +30,8 @@ fun <T : Any> T.logger(): Lazy<Logger> {
     )}
 }
 
-fun String.parseJson(): Future<JsonObject?> {
-    val promise: Promise<JsonObject?> = Promise.promise()
+fun String.parseJson(): Future<JsonObject> {
+    val promise: Promise<JsonObject> = Promise.promise()
     val parser = JsonParser.newParser()
     val buffer = Buffer.buffer()
     buffer.appendString(this)

@@ -8,5 +8,9 @@
     "DB_PASSWORD": "password",
     "DB_DATABASE": "gateway",
     "DB_POOL_SIZE": 30,
-    "DB_EXTRA_PARAMETERS": "useUnicode=true&character_set_server=utf8mb4&collation_database=utf8mb4_unicode_ci"
+    "DB_EXTRA_PARAMETERS": "useUnicode=true&character_set_server=utf8mb4&collation_database=utf8mb4_unicode_ci",
+    "DB_CONNECT_TIMEOUT": 30000,
+    "REDIS_HOST": "192.168.0.197",
+    "REDIS_PORT": 6379,
+    "REDIS_CONNECT_TIMEOUT": 60
 }
