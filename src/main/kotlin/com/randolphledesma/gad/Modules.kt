@@ -29,6 +29,7 @@ import io.vertx.kotlin.ext.sql.getConnectionAwait
 
 import io.vertx.kotlin.core.json.json
 import io.vertx.kotlin.core.json.obj
+import redis.clients.jedis.Jedis
 
 /**
  * The application itself.
@@ -62,6 +63,7 @@ class Application @Inject constructor(private val applicationContext: Applicatio
         VertxModule::class,
         VertxWebClientModule::class,
         SqlModule::class,
+        RedisModule::class,
         ApplicationContextModule::class,
         HttpVerticleModule::class
     ])
@@ -70,7 +72,7 @@ interface ApplicationComponent {
 }
 
 @Singleton
-class ApplicationContext @Inject constructor(val vertx: Vertx, val dbClient: JDBCClient) {
+class ApplicationContext @Inject constructor(val vertx: Vertx, val dbClient: JDBCClient, val redis: Jedis) {
     private val LOG by logger()
     var configuration = JsonObject()
 
@@ -110,7 +112,7 @@ object ApplicationContextModule {
     @Singleton
     @IntoMap
     @StringKey("com.randolphledesma.gad.ApplicationContext")
-    fun provideApplicationContext(vertx: Vertx, dbClient: JDBCClient) = ApplicationContext(vertx, dbClient)
+    fun provideApplicationContext(vertx: Vertx, dbClient: JDBCClient, redis: Jedis) = ApplicationContext(vertx, dbClient, redis)
 }
 
 @Module
@@ -151,6 +153,16 @@ object VertxWebClientModule {
         val options = WebClientOptions().setTcpKeepAlive(true).setUserAgent("Gad/1.0")
         val client = WebClient.create(vertx, options)
         return client
+    }
+}
+
+@Module
+object RedisModule {
+
+    @Provides
+    @Singleton
+    fun provideRedisClient(): Jedis {
+        return Jedis("localhost")
     }
 }
 

@@ -5,6 +5,7 @@ import io.vertx.core.Future
 
 class MainVerticle : AbstractVerticle() {
 
+  @Suppress("complete", "DEPRECATION")
   override fun start(startFuture: Future<Void>) {
     vertx
       .createHttpServer()

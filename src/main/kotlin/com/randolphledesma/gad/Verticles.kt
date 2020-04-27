@@ -7,6 +7,7 @@ import javax.inject.Inject
 class HttpVerticle @Inject constructor(private val mainController: MainController): AbstractVerticle() {
   private val LOG by logger()
 
+  @Suppress("accept,complete,fail", "DEPRECATION")
   override fun start(startFuture: Future<Void>) {
     val router = mainController.create()
     val applicationContext = mainController.applicationContext

@@ -17,6 +17,7 @@ class TestMainVerticle {
 
   @Test
   fun verticle_deployed(vertx: Vertx, testContext: VertxTestContext) {
+    println("$vertx")
     testContext.completeNow()
   }
 }
