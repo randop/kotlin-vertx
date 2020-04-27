@@ -22,7 +22,10 @@ import io.vertx.ext.web.Route
 import io.vertx.ext.web.RoutingContext
 import io.vertx.kotlin.coroutines.dispatcher
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import redis.clients.jedis.Jedis
+import java.util.*
 
 fun <T : Any> T.logger(): Lazy<Logger> {
     return lazy { LoggerFactory.getLogger(
@@ -96,4 +99,49 @@ fun Route.coroutineHandler(fn: suspend (RoutingContext) -> Unit) {
  */
 fun HttpServerResponse.endWithJson(obj: Any) {
     this.putHeader("Content-Type", "application/json; charset=utf-8").end(Json.encode(obj))
+}
+
+suspend fun Jedis.acquireLockWithTimeout(lockName: String, acquireTimeout: Long, lockTimeout: Long): String? {
+    val identifier = UUID.randomUUID().toString()
+    val lockKey = "lock:$lockName"
+    val lockExpire = lockTimeout.toInt() / 1000
+
+    val end = System.currentTimeMillis() + acquireTimeout
+    while (System.currentTimeMillis() < end) {
+        if (this.setnx(lockKey, identifier) == 1L){
+            this.expire(lockKey, lockExpire)
+            return identifier
+        }
+        if (this.ttl(lockKey) == -1L) {
+            this.expire(lockKey, lockExpire)
+        }
+
+        try {
+            delay(1)
+        } catch(error: Throwable){
+            //TODO("")
+        }
+    }
+
+    // null indicates that the lock was not acquired
+    return null
+}
+
+fun Jedis.releaseLock(lockName: String, identifier: String): Boolean {
+    val lockKey = "lock:$lockName"
+
+    while (true){
+        this.watch(lockKey)
+        if (identifier == this.get(lockKey)){
+            val trans = this.multi()
+            trans.del(lockKey)
+            trans.exec() ?: continue
+            return true
+        }
+
+        this.unwatch()
+        break
+    }
+
+    return false;
 }

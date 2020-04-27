@@ -5,7 +5,6 @@ import dagger.Provides
 import dagger.Component
 import dagger.multibindings.IntoMap
 import dagger.multibindings.StringKey
-import io.vertx.config.ConfigRetriever
 
 import kotlinx.coroutines.*
 import io.vertx.kotlin.coroutines.*
@@ -29,8 +28,9 @@ import io.vertx.kotlin.ext.sql.getConnectionAwait
 
 import io.vertx.kotlin.core.json.json
 import io.vertx.kotlin.core.json.obj
+import io.vertx.config.ConfigRetriever
+
 import redis.clients.jedis.Jedis
-import java.util.*
 
 /**
  * The application itself.
@@ -164,29 +164,29 @@ object RedisModule {
     @Singleton
     fun provideRedisClient(vertx: Vertx): Jedis {
         lateinit var client: Jedis
-        runBlocking {
-            var jsonConfig = JsonObject()
+        val jsonConfig = runBlocking<JsonObject> {
+            var jsonObject = JsonObject()
             try {
                 val retriever = ConfigRetriever.create(vertx)
-                jsonConfig = awaitResult { handler ->
+                jsonObject = awaitResult { handler ->
                     retriever.getConfig(handler)
                 }
             } catch (error: Throwable) {
                 //void
             }
+            return@runBlocking jsonObject
+        }
+        val host = jsonConfig.getString(ConfigurationKeyList.REDIS_HOST.name, "127.0.0.1")
+        val port = jsonConfig.getInteger(ConfigurationKeyList.REDIS_PORT.name, 6379)
+        val timeout = jsonConfig.getInteger(ConfigurationKeyList.REDIS_CONNECT_TIMEOUT.name, 60)
 
-            val host = jsonConfig.getString(ConfigurationKeyList.REDIS_HOST.name, "127.0.0.1")
-            val port = jsonConfig.getInteger(ConfigurationKeyList.REDIS_PORT.name, 6379)
-            val timeout = jsonConfig.getInteger(ConfigurationKeyList.REDIS_CONNECT_TIMEOUT.name, 60)
-
-            try {
-                client = Jedis(host, port, timeout)
-                client.connect()
-                println("Redis Connected: ${client.isConnected}")
-            } catch (error: Throwable) {
-                LOG.error(error.message, error)
-                System.exit(-1)
-            }
+        try {
+            client = Jedis(host, port, timeout)
+            client.connect()
+            LOG.info("Redis Connection $host:$port Succeeded")
+        } catch (error: Throwable) {
+            LOG.error(error.message, error)
+            System.exit(-1)
         }
         return client
     }
@@ -239,7 +239,7 @@ object SqlModule {
                     val jsonResult = jsonVal.parseJson().await()
                     val ts = jsonResult.getString("ts")
                     LOG.info("$jsonVal")
-                    LOG.info("Database Startup Connection Succeeded: $ts")
+                    LOG.info("Database Startup Connection $host:$port Succeeded: $ts")
                     connection.close()
                 }                
             } catch(error: Throwable) {
