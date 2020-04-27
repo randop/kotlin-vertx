@@ -2,6 +2,7 @@ package com.randolphledesma.gad
 
 import io.vertx.core.http.HttpHeaders.CONTENT_TYPE
 import io.vertx.core.http.HttpMethod.*
+import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.handler.CorsHandler
@@ -44,20 +45,35 @@ class MainController @Inject constructor(val applicationContext: ApplicationCont
             }
         }
 
-        get("/uuid").coroutineHandler { ctx -> getUUID(ctx) }
+        route("/uuid").coroutineHandler { ctx -> getUUID(ctx) }
 
         route("/health").coroutineHandler { ctx -> health(ctx) }
 
         route("/locking").coroutineHandler { ctx -> locking(ctx) }
+
+        route("/es").coroutineHandler { ctx -> eventStore(ctx) }
 
         route().last().failureHandler { errorContext ->
             val e: Throwable? = errorContext.failure()
             if (e != null) {
                 LOG.error(e.message, e)
             }
+            val code = when (e) {
+                is EventStoreEntityException -> HttpStatus.UnprocessableEntity.code
+                else ->
+                    if (errorContext.statusCode()>0) {
+                        errorContext.statusCode()
+                    } else {
+                        HttpStatus.InternalServerError.code
+                    }
+            }
             with(errorContext.response()) {
-                statusCode = HttpStatus.InternalServerError.code
-                end()
+                statusCode = code
+                val result = mapOf(
+                    "status" to code,
+                    "error" to errorContext.failure().message
+                )
+                endWithJson(result)
             }
         }
     }
@@ -90,5 +106,15 @@ class MainController @Inject constructor(val applicationContext: ApplicationCont
             println(e)
         }
         ctx.response().end()
+    }
+
+    private suspend fun eventStore(ctx: RoutingContext) {
+        val eventStore = applicationContext.eventStore
+        val json = JsonObject()
+        json.put("serverTime", System.currentTimeMillis())
+
+        val event = EventStoreEvent(UUID.randomUUID().toString(), "InfoAdded", json)
+        val resource = EventStoreResource("logs", event)
+        ctx.response().end( eventStore.writeToStream(resource) )
     }
 }

@@ -11,6 +11,7 @@ import io.vertx.kotlin.coroutines.*
 
 import javax.inject.Inject
 import javax.inject.Singleton
+import javax.inject.Named
 import javax.inject.Provider
 
 import io.vertx.core.Verticle
@@ -21,6 +22,7 @@ import io.vertx.kotlin.coroutines.awaitResult
 import io.vertx.kotlin.coroutines.dispatcher
 import io.vertx.ext.web.client.WebClient
 import io.vertx.ext.web.client.WebClientOptions
+import io.vertx.ext.web.client.predicate.ResponsePredicate
 
 import io.vertx.ext.jdbc.JDBCClient
 import io.vertx.kotlin.ext.sql.queryAwait
@@ -29,6 +31,8 @@ import io.vertx.kotlin.ext.sql.getConnectionAwait
 import io.vertx.kotlin.core.json.json
 import io.vertx.kotlin.core.json.obj
 import io.vertx.config.ConfigRetriever
+import io.vertx.core.buffer.Buffer
+import io.vertx.ext.web.client.HttpResponse
 
 import redis.clients.jedis.Jedis
 
@@ -73,22 +77,11 @@ interface ApplicationComponent {
 }
 
 @Singleton
-class ApplicationContext @Inject constructor(val vertx: Vertx, val dbClient: JDBCClient, val redis: Jedis) {
+class ApplicationContext @Inject constructor(val vertx: Vertx, @Named("Configuration") val configuration: JsonObject, val dbClient: JDBCClient, val redis: Jedis, val eventStore: EventStoreClient) {
     private val LOG by logger()
-    var configuration = JsonObject()
 
     init {
-        runBlocking {
-            try {
-                val retriever = ConfigRetriever.create(vertx)
-                configuration = awaitResult<JsonObject> { handler ->
-                    retriever.getConfig(handler)
-                }
-                LOG.info("Application Configuration Loaded")
-            } catch (error: Throwable) {
-                LOG.error("Application Configuration Retrieval Failed", error)
-            }
-        }
+        LOG.info("ApplicationContext initialized")
     }
 }
 
@@ -113,7 +106,7 @@ object ApplicationContextModule {
     @Singleton
     @IntoMap
     @StringKey("com.randolphledesma.gad.ApplicationContext")
-    fun provideApplicationContext(vertx: Vertx, dbClient: JDBCClient, redis: Jedis) = ApplicationContext(vertx, dbClient, redis)
+    fun provideApplicationContext(vertx: Vertx, configuration: JsonObject, dbClient: JDBCClient, redis: Jedis, eventStore: EventStoreClient) = ApplicationContext(vertx, configuration, dbClient, redis, eventStore)
 }
 
 @Module
@@ -135,6 +128,7 @@ object HttpVerticleModule {
 
 @Module
 object VertxModule {
+    private val LOG by logger()
 
     @Provides    
     @Singleton
@@ -143,14 +137,82 @@ object VertxModule {
         vertx.registerVerticleFactory(verticleFactory)
         return vertx
     }
+
+    @Provides
+    @Singleton
+    @Named("Configuration")
+    fun provideConfiguration(vertx: Vertx): JsonObject {
+        return runBlocking<JsonObject> {
+            var jsonObject = JsonObject()
+            try {
+                val retriever = ConfigRetriever.create(vertx)
+                jsonObject = awaitResult { handler ->
+                    retriever.getConfig(handler)
+                }
+                LOG.info("Configuration Loader Succeeded")
+            } catch (error: Throwable) {
+                LOG.error("Configuration Loader Failed: ${error.message}", error)
+            }
+            return@runBlocking jsonObject
+        }
+    }
 }
 
 @Module
 object VertxWebClientModule {
+    private val LOG by logger()
 
     @Provides    
     @Singleton
     fun provideVertxWebClient(vertx: Vertx): WebClient {        
+        val options = WebClientOptions().setTcpKeepAlive(true).setUserAgent("Gad/1.0")
+        return WebClient.create(vertx, options)
+    }
+
+    @Provides
+    @Singleton
+    fun provideEventStoreWebClientWebClient(vertx: Vertx, @Named("Configuration") jsonConfig: JsonObject): EventStoreClient {
+        val options = WebClientOptions().setTcpKeepAlive(true).setUserAgent("Gad/1.0")
+        val client = WebClient.create(vertx, options)
+
+        val host = jsonConfig.getString(ConfigurationKeyList.ES_HOST.name, "127.0.0.1")
+        val port = jsonConfig.getInteger(ConfigurationKeyList.ES_PORT.name, 6379)
+        val timeout = jsonConfig.getLong(ConfigurationKeyList.ES_DISPATCH_TIMEOUT.name, 10000)
+        val user = jsonConfig.getString(ConfigurationKeyList.ES_USER.name, "admin")
+        val password = jsonConfig.getString(ConfigurationKeyList.ES_PASSWORD.name, "changeit")
+
+        runBlocking {
+            try {
+                val request = client.getAbs("http://$host:$port/streams/test/0")
+                    .basicAuthentication(user, password)
+                    .timeout(timeout)
+                    .putHeader("Accept", "application/json")
+                    .expect(ResponsePredicate.SC_SUCCESS)
+                    .expect(
+                        ResponsePredicate.contentType(
+                            listOf(
+                                "application/json",
+                                "application/json; charset=utf-8"
+                            )
+                        )
+                    )
+                val result = awaitResult<HttpResponse<Buffer>> { handler ->
+                    request.send(handler)
+                }
+                LOG.info("EventStore Startup Connection @$host:$port Succeeded: $result")
+            } catch (error: Throwable) {
+                LOG.error("EventStore Startup Connection Failed: ${error.message}", error)
+                System.exit(-1)
+            }
+        }
+
+        return EventStoreClient(client, jsonConfig)
+    }
+
+    @Provides
+    @Singleton
+    @Named("ElasticSearchWebClient")
+    fun provideElasticSearchWebClient(vertx: Vertx): WebClient {
         val options = WebClientOptions().setTcpKeepAlive(true).setUserAgent("Gad/1.0")
         return WebClient.create(vertx, options)
     }
@@ -162,20 +224,9 @@ object RedisModule {
 
     @Provides
     @Singleton
-    fun provideRedisClient(vertx: Vertx): Jedis {
+    fun provideRedisClient(@Named("Configuration") jsonConfig: JsonObject): Jedis {
         lateinit var client: Jedis
-        val jsonConfig = runBlocking<JsonObject> {
-            var jsonObject = JsonObject()
-            try {
-                val retriever = ConfigRetriever.create(vertx)
-                jsonObject = awaitResult { handler ->
-                    retriever.getConfig(handler)
-                }
-            } catch (error: Throwable) {
-                //void
-            }
-            return@runBlocking jsonObject
-        }
+
         val host = jsonConfig.getString(ConfigurationKeyList.REDIS_HOST.name, "127.0.0.1")
         val port = jsonConfig.getInteger(ConfigurationKeyList.REDIS_PORT.name, 6379)
         val timeout = jsonConfig.getInteger(ConfigurationKeyList.REDIS_CONNECT_TIMEOUT.name, 60)
@@ -183,7 +234,7 @@ object RedisModule {
         try {
             client = Jedis(host, port, timeout)
             client.connect()
-            LOG.info("Redis Connection $host:$port Succeeded")
+            LOG.info("Redis Connection @$host:$port Succeeded")
         } catch (error: Throwable) {
             LOG.error(error.message, error)
             System.exit(-1)
@@ -198,20 +249,10 @@ object SqlModule {
 
     @Provides
     @Singleton
-    fun provideJdbcClient(vertx: Vertx): JDBCClient {
+    fun provideJdbcClient(vertx: Vertx, @Named("Configuration") jsonConfig: JsonObject): JDBCClient {
         lateinit var client: JDBCClient
         val sql = "SELECT CURRENT_TIMESTAMP() AS ts, @@character_set_database AS db_charset, @@collation_database AS db_collation, @@global.time_zone AS tz_global, @@session.time_zone AS tz_session"
         runBlocking {
-            var jsonConfig = JsonObject()
-            try {
-                val retriever = ConfigRetriever.create(vertx)
-                jsonConfig = awaitResult<JsonObject> { handler ->
-                    retriever.getConfig(handler)
-                }
-            } catch (error: Throwable) {
-                //void
-            }
-
             val host = jsonConfig.getString(ConfigurationKeyList.DB_HOST.name, "127.0.0.1")
             val port = jsonConfig.getInteger(ConfigurationKeyList.DB_PORT.name, 3306)
             val user = jsonConfig.getString(ConfigurationKeyList.DB_USER.name, "DEFAULT_USER")
@@ -239,7 +280,7 @@ object SqlModule {
                     val jsonResult = jsonVal.parseJson().await()
                     val ts = jsonResult.getString("ts")
                     LOG.info("$jsonVal")
-                    LOG.info("Database Startup Connection $host:$port Succeeded: $ts")
+                    LOG.info("Database Startup Connection @$host:$port Succeeded: $ts")
                     connection.close()
                 }                
             } catch(error: Throwable) {

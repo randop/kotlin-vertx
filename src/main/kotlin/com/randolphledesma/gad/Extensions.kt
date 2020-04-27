@@ -25,7 +25,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import redis.clients.jedis.Jedis
-import java.util.*
+import java.util.UUID
 
 fun <T : Any> T.logger(): Lazy<Logger> {
     return lazy { LoggerFactory.getLogger(
@@ -143,5 +143,5 @@ fun Jedis.releaseLock(lockName: String, identifier: String): Boolean {
         break
     }
 
-    return false;
+    return false
 }
