@@ -20,6 +20,10 @@ application/vnd.eventstore.events+json
 }
 */
 
+/**
+ * TODO: exclude null metadata when marshalling it as JSON payload
+ */
+
 data class EventStoreEvent(val eventId: String, val eventType: String, val data: JsonObject, val metadata: JsonObject? = null) {
     fun encode(): String? {
         return JsonObject.mapFrom(this).encode()

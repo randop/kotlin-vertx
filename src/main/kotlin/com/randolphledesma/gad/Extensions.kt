@@ -1,10 +1,5 @@
 package com.randolphledesma.gad
 
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.Year
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 
@@ -18,20 +13,40 @@ import io.vertx.core.buffer.Buffer
 import io.vertx.core.Promise
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.core.json.Json
+import io.vertx.ext.sql.SQLConnection
 import io.vertx.ext.web.Route
 import io.vertx.ext.web.RoutingContext
 import io.vertx.kotlin.coroutines.dispatcher
+import io.vertx.kotlin.ext.sql.closeAwait
+import io.vertx.kotlin.ext.sql.commitAwait
+import io.vertx.kotlin.ext.sql.setAutoCommitAwait
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import redis.clients.jedis.Jedis
+import java.io.ByteArrayOutputStream
 import java.util.UUID
+import java.util.zip.GZIPInputStream
+import java.util.zip.GZIPOutputStream
+import java.nio.charset.StandardCharsets.UTF_8
+import java.time.*
 
 fun <T : Any> T.logger(): Lazy<Logger> {
     return lazy { LoggerFactory.getLogger(
         System.getProperty("vertx.logger-delegate-factory-class-name")?: "java.util.logging.LogManager"
     )}
 }
+
+fun ByteArray.gzip(): ByteArray {
+    val bos = ByteArrayOutputStream()
+    val gzipOS = GZIPOutputStream(bos)
+    gzipOS.write(this)
+    gzipOS.close()
+    return bos.toByteArray()
+}
+
+fun ByteArray.ungzip(): String =
+    GZIPInputStream(this.inputStream()).bufferedReader(UTF_8).use { it.readText() }
 
 fun String.parseJson(): Future<JsonObject> {
     val promise: Promise<JsonObject> = Promise.promise()
@@ -78,6 +93,10 @@ fun LocalDateTime.toMilliSeconds(): Long {
 fun String.toLocalDate(pattern: String): LocalDate {
     return LocalDate.parse(this, DateTimeFormatter.ofPattern(pattern))
 }
+
+fun String.toZuluDateTime() = ZonedDateTime.parse(this, DateTimeFormatter.ISO_DATE_TIME)
+
+fun ZonedDateTime.toPhilippines() = this.withZoneSameInstant(ZoneId.of("Asia/Manila"))
 
 /**
  * An extension method for simplifying coroutines usage with Vert.x Web routers
@@ -144,4 +163,11 @@ fun Jedis.releaseLock(lockName: String, identifier: String): Boolean {
     }
 
     return false
+}
+
+suspend inline fun SQLConnection.inTransaction(func: SQLConnection.() -> Unit) {
+    setAutoCommitAwait(false)
+    func()
+    commitAwait()
+    closeAwait()
 }

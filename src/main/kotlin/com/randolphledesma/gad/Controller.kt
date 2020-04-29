@@ -6,9 +6,12 @@ import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.handler.CorsHandler
+import io.vertx.kotlin.core.json.array
 import io.vertx.kotlin.core.json.obj
 import io.vertx.kotlin.core.json.json
+import io.vertx.kotlin.ext.sql.*
 import java.text.SimpleDateFormat
+import java.time.ZoneId
 import java.util.*
 
 import javax.inject.Inject
@@ -79,14 +82,40 @@ class MainController @Inject constructor(val applicationContext: ApplicationCont
     }
 
     private suspend fun getUUID(ctx: RoutingContext) {
-        var uuid = redis.get("uuid")
-        if (uuid.isNullOrBlank()) {
-            uuid = UUID.randomUUID().toString()
-            redis.set("uuid", uuid)
+        var uuid = UUID.randomUUID().toString()
+        val r = json {
+            obj("uuid" to uuid, "emoji" to "Hello 😀")
         }
-        ctx.response().endWithJson(json {
-            obj("uuid" to uuid )
-        })
+
+        val connection = applicationContext.dbClient.getConnectionAwait()
+        connection.inTransaction {
+            val sqlDs = "INSERT INTO datastore (row_key,column_name,ref_key,body) VALUES (?,?,?,?)"
+            val paramsDs = json {
+                array(uuid, "base", 0, r.encode().toByteArray().gzip())
+            }
+            updateWithParamsAwait(sqlDs, paramsDs)
+            val sqlAcccount = "INSERT INTO accounts (row_key) VALUES (?)"
+            val paramsAcccount = json {
+                array(uuid)
+            }
+            updateWithParamsAwait(sqlAcccount, paramsAcccount)
+            val sqlUser = "INSERT INTO users (row_key, email, password) VALUES (?,?,?)"
+            val paramsUser = json {
+                array(uuid, "test@email.com", "test")
+            }
+            updateWithParamsAwait(sqlUser, paramsUser)
+        }
+
+        val connection2 = applicationContext.dbClient.getConnectionAwait()
+        val sql = "SELECT * FROM datastore WHERE row_key='$uuid'"
+        val res = connection2.queryAwait(sql)
+        val created_at = res.rows[0].getString("created_at").toZuluDateTime()
+
+        println(created_at.toPhilippines())
+
+        //println(res.rows[0].getBinary("body").ungzip().toString())
+        //val created_at = res.rows[0].getString("created_at").toDateString().toZuluDateTime()
+        ctx.response().endWithJson(r)
     }
 
     private suspend fun health(ctx: RoutingContext) {

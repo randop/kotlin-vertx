@@ -26,6 +26,7 @@ ext {
     daggerVersion = '2.27'
     mysqlConnectorVersion = '8.0.19'
     jedisVersion = '2.9.0'
+    moshipackVersion = '1.0.1'
 }
 
 mainClassName = 'com.randolphledesma.gad.AppKt'
@@ -38,6 +39,8 @@ dependencies {
     implementation "io.vertx:vertx-config:$vertxVersion"
     implementation "io.vertx:vertx-jdbc-client:$vertxVersion"
     implementation "io.vertx:vertx-sql-common:$vertxVersion"
+
+    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinCoroutinesVersion"
 
     compile "mysql:mysql-connector-java:$mysqlConnectorVersion"
