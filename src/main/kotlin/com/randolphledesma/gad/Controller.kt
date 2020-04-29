@@ -111,7 +111,7 @@ class MainController @Inject constructor(val applicationContext: ApplicationCont
         val res = connection2.queryAwait(sql)
         val created_at = res.rows[0].getString("created_at").toZuluDateTime()
 
-        println(created_at.toPhilippines())
+        println(created_at.toPhilippinesDateTime())
 
         //println(res.rows[0].getBinary("body").ungzip().toString())
         //val created_at = res.rows[0].getString("created_at").toDateString().toZuluDateTime()

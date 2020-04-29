@@ -94,9 +94,9 @@ fun String.toLocalDate(pattern: String): LocalDate {
     return LocalDate.parse(this, DateTimeFormatter.ofPattern(pattern))
 }
 
-fun String.toZuluDateTime() = ZonedDateTime.parse(this, DateTimeFormatter.ISO_DATE_TIME)
+fun String.toZuluDateTime(): ZonedDateTime = ZonedDateTime.parse(this, DateTimeFormatter.ISO_DATE_TIME)
 
-fun ZonedDateTime.toPhilippines() = this.withZoneSameInstant(ZoneId.of("Asia/Manila"))
+fun ZonedDateTime.toPhilippinesDateTime(): ZonedDateTime = this.withZoneSameInstant(ZoneId.of("Asia/Manila"))
 
 /**
  * An extension method for simplifying coroutines usage with Vert.x Web routers
