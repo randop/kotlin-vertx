@@ -49,13 +49,8 @@ class MainController @Inject constructor(val applicationContext: ApplicationCont
         }
 
         route("/uuid").coroutineHandler { ctx -> getUUID(ctx) }
-
         route("/health").coroutineHandler { ctx -> health(ctx) }
-
-        route("/locking").coroutineHandler { ctx -> locking(ctx) }
-
-        route("/es").coroutineHandler { ctx -> eventStore(ctx) }
-
+        
         route().last().failureHandler { errorContext ->
             val e: Throwable? = errorContext.failure()
             if (e != null) {
