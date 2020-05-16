@@ -23,7 +23,7 @@ class MainController @Inject constructor(val applicationContext: ApplicationCont
     fun create(): Router = Router.router(applicationContext.vertx).apply {
         val cors = CorsHandler.create("*")
             .allowedHeader(CONTENT_TYPE.toString())
-            .allowedMethods(setOf(GET, POST, PUT, PATCH, DELETE, OPTIONS))
+            .allowedMethods(setOf(GET, POST, PUT, DELETE, OPTIONS))
         route().handler(cors)
 
         route().last().handler { context ->
@@ -50,7 +50,7 @@ class MainController @Inject constructor(val applicationContext: ApplicationCont
 
         route("/uuid").coroutineHandler { ctx -> getUUID(ctx) }
         route("/health").coroutineHandler { ctx -> health(ctx) }
-        
+
         route().last().failureHandler { errorContext ->
             val e: Throwable? = errorContext.failure()
             if (e != null) {
