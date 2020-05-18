@@ -1,5 +1,7 @@
 package com.randolphledesma.gad
 
+import com.randolphledesma.gad.util.ConfigurationKeyList
+import com.randolphledesma.gad.util.logger
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Future
 import javax.inject.Inject

@@ -1,4 +1,4 @@
-package com.randolphledesma.gad
+package com.randolphledesma.gad.util
 
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException

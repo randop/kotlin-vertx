@@ -1,4 +1,4 @@
-package com.randolphledesma.gad
+package com.randolphledesma.gad.util
 
 enum class HttpStatus(val code: Int) {
   Continue(100),

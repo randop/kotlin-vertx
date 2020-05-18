@@ -1,5 +1,6 @@
 package com.randolphledesma.gad
 
+import com.randolphledesma.gad.util.*
 import io.vertx.core.http.HttpHeaders.CONTENT_TYPE
 import io.vertx.core.http.HttpMethod.*
 import io.vertx.core.json.JsonObject
@@ -11,7 +12,6 @@ import io.vertx.kotlin.core.json.obj
 import io.vertx.kotlin.core.json.json
 import io.vertx.kotlin.ext.sql.*
 import java.text.SimpleDateFormat
-import java.time.ZoneId
 import java.util.*
 
 import javax.inject.Inject

@@ -1,5 +1,7 @@
 package com.randolphledesma.gad
 
+import com.randolphledesma.gad.util.ConfigurationKeyList
+import com.randolphledesma.gad.util.logger
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.client.HttpResponse
