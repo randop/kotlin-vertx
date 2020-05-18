@@ -27,6 +27,7 @@ ext {
     mysqlConnectorVersion = '8.0.19'
     jedisVersion = '2.9.0'
     moshipackVersion = '1.0.1'
+    hikariVersion = '3.4.5'
 }
 
 mainClassName = 'com.randolphledesma.gad.AppKt'
@@ -45,6 +46,7 @@ dependencies {
 
     compile "mysql:mysql-connector-java:$mysqlConnectorVersion"
     compile "redis.clients:jedis:$jedisVersion"
+    compile "com.zaxxer:HikariCP:$hikariVersion"
 
     implementation "com.google.dagger:dagger:$daggerVersion"
     annotationProcessor "com.google.dagger:dagger-compiler:$daggerVersion"

@@ -268,10 +268,11 @@ object SqlModule {
             try {
                 var config = json {
                     obj(
-                        "url" to "jdbc:mysql://$host:$port/$db?$extra",
-                        "driver_class" to "com.mysql.cj.jdbc.Driver",
-                        "max_pool_size" to poolSize,
-                        "user" to user,
+                        "provider_class" to "io.vertx.ext.jdbc.spi.impl.HikariCPDataSourceProvider",
+                        "jdbcUrl" to "jdbc:mysql://$host:$port/$db?$extra",
+                        "driverClassName" to "com.mysql.cj.jdbc.Driver",
+                        "maximumPoolSize" to poolSize,
+                        "username" to user,
                         "password" to password
                     )
                 }

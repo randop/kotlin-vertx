@@ -141,6 +141,6 @@ interface CommandService {
 }
 
 interface QueryService {
-    fun getAccount()
-    fun getUser()
+    fun getAccount(accountId: String)
+    fun getUser(userId: String)
 }
