@@ -1,5 +1,9 @@
 package com.randolphledesma.gad
 
+import com.randolphledesma.gad.managers.ContactServiceManager
+import com.randolphledesma.gad.models.Account
+import com.randolphledesma.gad.models.Contact
+import com.randolphledesma.gad.models.ContactGroup
 import com.randolphledesma.gad.util.*
 import io.vertx.core.http.HttpHeaders.CONTENT_TYPE
 import io.vertx.core.http.HttpMethod.*
@@ -17,6 +21,7 @@ import java.util.*
 import javax.inject.Inject
 
 class MainController @Inject constructor(val applicationContext: ApplicationContext) {
+    private val contactServiceManager = ContactServiceManager(applicationContext)
     private val redis = applicationContext.redis
     private val LOG by logger()
 
@@ -50,6 +55,7 @@ class MainController @Inject constructor(val applicationContext: ApplicationCont
 
         route("/uuid").coroutineHandler { ctx -> getUUID(ctx) }
         route("/health").coroutineHandler { ctx -> health(ctx) }
+        route("/es").coroutineHandler { ctx -> eventStore(ctx) }
 
         route().last().failureHandler { errorContext ->
             val e: Throwable? = errorContext.failure()
@@ -133,12 +139,12 @@ class MainController @Inject constructor(val applicationContext: ApplicationCont
     }
 
     private suspend fun eventStore(ctx: RoutingContext) {
-        val eventStore = applicationContext.eventStore
-        val json = JsonObject()
-        json.put("serverTime", System.currentTimeMillis())
-
-        val event = EventStoreEvent(UUID.randomUUID().toString(), "InfoAdded", json)
-        val resource = EventStoreResource("logs", event)
-        ctx.response().end( eventStore.writeToStream(resource) )
+        val account = Account(UUID.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff"), "Randolph Ledesma", "4157543092", "randop@me.com")
+        val contact = Contact(UUID.randomUUID(), "Randolph Ledesma", "4157543092")
+        val contactGroup = ContactGroup(UUID.randomUUID(), "Randolph")
+        val newContact = contactServiceManager.addContact(account, contact)
+        contactServiceManager.addGroup(account, contactGroup)
+        contactServiceManager.addContactAtGroup(account, contact, contactGroup)
+        ctx.response().end( newContact.contactId.toString() )
     }
 }

@@ -134,13 +134,3 @@ data class DataStoreCell(val added_id: Int, val row_key: String, val column_name
         return result
     }
 }
-
-interface CommandService {
-    fun accountCreated()
-    fun userPasswordUpdated()
-}
-
-interface QueryService {
-    fun getAccount(accountId: String)
-    fun getUser(userId: String)
-}

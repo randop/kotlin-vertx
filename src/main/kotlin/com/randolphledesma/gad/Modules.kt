@@ -272,6 +272,7 @@ object SqlModule {
                         "jdbcUrl" to "jdbc:mysql://$host:$port/$db?$extra",
                         "driverClassName" to "com.mysql.cj.jdbc.Driver",
                         "maximumPoolSize" to poolSize,
+                        "minimumIdle" to 3,
                         "username" to user,
                         "password" to password
                     )
